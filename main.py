@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 from loguru import logger
 from bilibili import BilibiliTask
 from push import format_push_message, send_to_pushplus
+from telegram_bot import send_telegram
 
 class BeijingFormatter:
     @staticmethod
@@ -169,7 +170,8 @@ def main():
 
         if account_failed:
             any_failed = True
-
+            
+    # PushPlus
     if config["PUSH_PLUS_TOKEN"] and all_results:
         logger.info('准备发送推送通知...')
         title = "Bilibili 任务通知"
@@ -177,6 +179,22 @@ def main():
         send_to_pushplus(config["PUSH_PLUS_TOKEN"], title, content)
     else:
         logger.info('未配置 PUSH_PLUS_TOKEN，跳过推送。')
+
+    # Telegram
+    if (
+        os.environ.get("TG_BOT_TOKEN")
+        and os.environ.get("TG_CHAT_ID")
+        and all_results
+    ):
+        logger.info('准备发送 Telegram 通知...')
+
+        try:
+            send_telegram(content)
+            logger.info("Telegram 推送成功。")
+        except Exception as exc:
+        logger.error(f"Telegram 推送失败: {exc}")
+    else:
+        logger.info("未配置 TG_BOT_TOKEN/TG_CHAT_ID，跳过 Telegram。")
 
     # 所有账号执行完毕，统一输出最终执行结果
     if any_failed:
