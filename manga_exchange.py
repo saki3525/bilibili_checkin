@@ -120,32 +120,61 @@ def find_product(products, target):
 
 
 def sleep_until_target():
-    target = now_bj().replace(
-        hour=int(os.environ.get("MANGA_TARGET_HOUR", "12")),
-        minute=int(os.environ.get("MANGA_TARGET_MINUTE", "0")),
-        second=0,
-        microsecond=0,
-    )
+    target_slot = os.environ.get("MANGA_TARGET_SLOT", "morning")
 
     current = now_bj()
 
-    if current >= target:
-        log("当前已到/超过目标时间，不等待，立即开始抢券。")
-        return
+    if target_slot == "midnight":
+        # 23:58 启动，等待到次日 00:00:00
+        target = (current + timedelta(days=1)).replace(
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+        target_label = "次日 00:00:00"
+
+    else:
+        # 09:50 启动，等待到当天 10:00:00
+        target = current.replace(
+            hour=10,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+
+        # 手动运行如果已经超过 10:00，则直接执行
+        if current >= target:
+            log("当前已到/超过目标时间，不等待，立即开始抢券。")
+            return
+
+        target_label = "当天 10:00:00"
 
     seconds = (target - current).total_seconds()
+
     log(
-        f"已启动。北京时间目标 {target.strftime('%H:%M:%S')}，"
-        f"sleep {seconds:.3f} 秒。"
+        f"当前北京时间 {current.strftime('%Y-%m-%d %H:%M:%S')}，"
+        f"目标为 {target_label}，"
+        f"目标时间 {target.strftime('%Y-%m-%d %H:%M:%S')}，"
+        f"等待 {seconds:.3f} 秒。"
     )
 
     while True:
         remaining = (target - now_bj()).total_seconds()
+
         if remaining <= 0:
             break
-        time.sleep(min(remaining, 5))
 
-    log("到达北京时间 12:00:00，开始抢券。")
+        # 最后 10 秒提高检查频率
+        if remaining <= 10:
+            time.sleep(min(0.1, remaining))
+        else:
+            time.sleep(min(1.0, remaining))
+
+    log(
+        f"到达目标时间 {target.strftime('%Y-%m-%d %H:%M:%S')}，"
+        "开始抢券。"
+    )
 
 
 def exchange_once(session, cookie, product, quantity):
@@ -275,7 +304,10 @@ def main():
         1,
         int(os.environ.get("MANGA_EXCHANGE_NUM", "1")),
     )
-    test_only = os.environ.get("MANGA_TEST_ONLY", "0") == "1"
+    test_only = os.environ.get(
+        "MANGA_TEST_ONLY",
+        "false",
+    ).lower() in ("1", "true", "yes")
 
     log(f"检测到 {len(cookies)} 个 B站账号。")
     log(
@@ -286,7 +318,11 @@ def main():
         f"每个商品兑换数量={quantity}，"
         f"失败重试={retry_count}"
     )
-
+    log(
+        f"测试模式: test_only={test_only!r}, "
+        f"MANGA_TEST_ONLY={os.environ.get('MANGA_TEST_ONLY')!r}"
+    )
+    
     if not test_only:
         sleep_until_target()
     else:
