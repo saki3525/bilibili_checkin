@@ -54,6 +54,8 @@ jobs:
 
           # 手动测试默认不兑换；定时运行始终执行兑换。
           MANGA_TEST_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.test_only || '0' }}
+          test_only = os.getenv("MANGA_TEST_ONLY", "0").lower() in ("1", "true", "yes")
+          log(f"测试模式: test_only={test_only!r}, MANGA_TEST_ONLY={os.getenv('MANGA_TEST_ONLY')!r}")
 
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.wait_until_target }}" != "true" ]; then
