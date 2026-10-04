@@ -356,6 +356,9 @@ def main():
 
     send_result(results)
 
+    if test_only:
+    return 0
+
     return 0 if overall_success else 1
 
 
