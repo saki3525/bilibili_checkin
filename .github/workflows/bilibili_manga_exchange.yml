@@ -2,9 +2,14 @@ name: Bilibili Manga Coupon Exchange
 
 on:
   schedule:
-    # 每天北京时间 11:58 启动。
-    # Python 会继续等待到北京时间 12:00:00。
-    - cron: '58 11 * * *'
+    # 北京时间每天 23:58 启动
+    # → Python 等待到次日 00:00:00
+    - cron: '58 23 * * *'
+      timezone: Asia/Shanghai
+
+    # 北京时间每天 09:50 启动
+    # → Python 等待到当天 10:00:00
+    - cron: '50 9 * * *'
       timezone: Asia/Shanghai
 
   workflow_dispatch:
@@ -16,7 +21,7 @@ on:
         type: boolean
 
       wait_until_target:
-        description: '手动运行时是否等待到北京时间 12:00'
+        description: '手动运行时是否等待到下一个抢券时间'
         required: true
         default: false
         type: boolean
@@ -42,7 +47,6 @@ jobs:
 
       - name: Run manga coupon exchange
         env:
-          # Bilibili Cookie
           BILIBILI_COOKIE: ${{ secrets.BILIBILI_COOKIE }}
 
           # Telegram
@@ -53,25 +57,26 @@ jobs:
           MANGA_EXCHANGE_RETRY: ${{ vars.MANGA_EXCHANGE_RETRY }}
           MANGA_EXCHANGE_NUM: ${{ vars.MANGA_EXCHANGE_NUM }}
 
-          # 目标时间：北京时间 12:00
-          MANGA_TARGET_HOUR: '12'
+          # Python 根据目标时间自动判断是否跨天
+          MANGA_TARGET_HOUR: ${{ github.event.schedule == '58 23 * * *' && '00' || '10' }}
           MANGA_TARGET_MINUTE: '00'
 
           # 手动运行：
-          #   test_only=true  → 只测试，不兑换
-          #   test_only=false → 执行兑换
+          # test_only=true  -> 只测试
+          # test_only=false -> 真正兑换
           #
-          # 定时运行：
-          #   固定为 0 → 正常执行兑换
+          # schedule：
+          # 始终真正兑换
           MANGA_TEST_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.test_only || false }}
 
+          # 告诉 Python 本次是午夜场还是上午场
+          MANGA_TARGET_SLOT: ${{ github.event.schedule == '58 23 * * *' && 'midnight' || 'morning' }}
+
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.wait_until_target }}" != "true" ]; then
-            # 手动立即测试/运行：
-            # 将目标时间设为当前北京时间，
-            # 从而跳过等待。
-            export MANGA_TARGET_HOUR="$(TZ=Asia/Shanghai date +%H)"
-            export MANGA_TARGET_MINUTE="$(TZ=Asia/Shanghai date +%M)"
-          fi
+          echo "Event: ${{ github.event_name }}"
+          echo "Schedule: ${{ github.event.schedule }}"
+          echo "Target slot: $MANGA_TARGET_SLOT"
+          echo "Target: $MANGA_TARGET_HOUR:$MANGA_TARGET_MINUTE"
+          echo "Test only: $MANGA_TEST_ONLY"
 
           python manga_exchange.py
