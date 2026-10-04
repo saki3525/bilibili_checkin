@@ -35,5 +35,7 @@ jobs:
           COIN_ADD_NUM: ${{ secrets.COIN_ADD_NUM }}
           COIN_SELECT_LIKE: ${{ secrets.COIN_SELECT_LIKE }}
           COIN_VIDEO_SOURCE: ${{ secrets.COIN_VIDEO_SOURCE }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
           
         run: python main.py # 修改了执行的入口文件
