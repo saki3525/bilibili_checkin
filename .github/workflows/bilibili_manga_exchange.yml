@@ -2,8 +2,8 @@ name: Bilibili Manga Coupon Exchange
 
 on:
   schedule:
-    # GitHub Actions 支持 IANA timezone。
-    # 每天北京时间 11:58 启动，Python 再 sleep 到 12:00:00。
+    # 每天北京时间 11:58 启动。
+    # Python 会继续等待到北京时间 12:00:00。
     - cron: '58 11 * * *'
       timezone: Asia/Shanghai
 
@@ -14,6 +14,7 @@ on:
         required: true
         default: true
         type: boolean
+
       wait_until_target:
         description: '手动运行时是否等待到北京时间 12:00'
         required: true
@@ -35,32 +36,40 @@ jobs:
           python-version: '3.12'
 
       - name: Install dependencies
-        run: python -m pip install --upgrade pip requests
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
 
       - name: Run manga coupon exchange
         env:
+          # Bilibili Cookie
           BILIBILI_COOKIE: ${{ secrets.BILIBILI_COOKIE }}
 
-          # Telegram：放在 Settings -> Secrets and variables -> Actions -> Secrets
+          # Telegram
           TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
           TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
 
-          # 抢券策略：放在 Actions -> Variables
+          # 抢券策略
           MANGA_EXCHANGE_RETRY: ${{ vars.MANGA_EXCHANGE_RETRY }}
           MANGA_EXCHANGE_NUM: ${{ vars.MANGA_EXCHANGE_NUM }}
 
+          # 目标时间：北京时间 12:00
           MANGA_TARGET_HOUR: '12'
           MANGA_TARGET_MINUTE: '00'
 
-          # 手动测试默认不兑换；定时运行始终执行兑换。
-          MANGA_TEST_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.test_only || '0' }}
-          test_only = os.getenv("MANGA_TEST_ONLY", "0").lower() in ("1", "true", "yes")
-          log(f"测试模式: test_only={test_only!r}, MANGA_TEST_ONLY={os.getenv('MANGA_TEST_ONLY')!r}")
+          # 手动运行：
+          #   test_only=true  → 只测试，不兑换
+          #   test_only=false → 执行兑换
+          #
+          # 定时运行：
+          #   固定为 0 → 正常执行兑换
+          MANGA_TEST_ONLY: ${{ github.event_name == 'workflow_dispatch' && inputs.test_only || false }}
 
         run: |
           if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.wait_until_target }}" != "true" ]; then
-            # 手动立即测试/运行：把目标时间设为当前北京时间之前，
-            # 从而跳过 sleep。
+            # 手动立即测试/运行：
+            # 将目标时间设为当前北京时间，
+            # 从而跳过等待。
             export MANGA_TARGET_HOUR="$(TZ=Asia/Shanghai date +%H)"
             export MANGA_TARGET_MINUTE="$(TZ=Asia/Shanghai date +%M)"
           fi
