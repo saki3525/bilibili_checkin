@@ -16,8 +16,8 @@ BEIJING = timezone(timedelta(hours=8))
 # 目标名称以当前参考脚本为准；TEST MODE 会打印 API 实际返回的标题，
 # 如果 B 漫后续调整了空格/名称，可以据测试日志修改这里。
 TARGET_PRODUCTS = [
-    "〖超特惠〗限量-0点秒杀",
-    "〖特惠〗限量-10点秒杀",
+    "【超特惠】限量-0点秒杀",
+    "【特惠】限量-10点秒杀",
 ]
 
 LIST_PRODUCT_URL = (
