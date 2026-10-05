@@ -192,7 +192,7 @@ def main():
             send_telegram(content)
             logger.info("Telegram 推送成功。")
         except Exception as exc:
-        logger.error(f"Telegram 推送失败: {exc}")
+            logger.error(f"Telegram 推送失败: {exc}")
     else:
         logger.info("未配置 TG_BOT_TOKEN/TG_CHAT_ID，跳过 Telegram。")
 
