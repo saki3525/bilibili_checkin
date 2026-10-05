@@ -3,14 +3,12 @@ name: Bilibili Manga Coupon Exchange
 on:
   schedule:
     # 北京时间 23:58 启动
-    # Python 等到次日 00:00:00
-    - cron: '58 23 * * *'
-      timezone: Asia/Shanghai
+    # GitHub Actions 使用 UTC，因此为 15:58 UTC
+    - cron: '58 15 * * *'
 
     # 北京时间 09:58 启动
-    # Python 等到当天 10:00:00
-    - cron: '58 9 * * *'
-      timezone: Asia/Shanghai
+    # GitHub Actions 使用 UTC，因此为 01:58 UTC
+    - cron: '58 1 * * *'
 
   workflow_dispatch:
     inputs:
@@ -75,7 +73,7 @@ jobs:
 
           # 定时任务根据 cron 判断场次。
           # 手动运行使用 target_slot。
-          MANGA_TARGET_SLOT: ${{ github.event_name == 'workflow_dispatch' && inputs.target_slot || (github.event.schedule == '58 23 * * *' && 'midnight' || 'morning') }}
+          MANGA_TARGET_SLOT: ${{ github.event_name == 'workflow_dispatch' && inputs.target_slot || (github.event.schedule == '58 15 * * *' && 'midnight' || 'morning') }}
 
         run: |
           echo "Event: ${{ github.event_name }}"
