@@ -60,7 +60,6 @@ def execute_coin_task(bili, user_info, config):
             logger.info(f"为视频 {bvid} 投币成功。")
         elif "已达到" in msg:
             logger.warning("今日投币上限已满，终止投币。")
-            added_coins = config.get('COIN_ADD_NUM')
             break
         else:
             logger.warning(f"为视频 {bvid} 投币失败: {msg}")
@@ -117,6 +116,11 @@ def main():
         sys.exit(1)
 
     cookies = [c.strip() for c in config["BILIBILI_COOKIE"].split('###') if c.strip()]
+    
+    if not cookies:
+        logger.error('未检测到有效的 BILIBILI_COOKIE，程序终止')
+        sys.exit(1)
+
     logger.info(f"检测到 {len(cookies)} 个账号，开始执行任务...")
     
     all_results = []
@@ -171,11 +175,13 @@ def main():
         if account_failed:
             any_failed = True
             
+    # 生成统一的推送内容
+    content = format_push_message(all_results)
+
     # PushPlus
     if config["PUSH_PLUS_TOKEN"] and all_results:
         logger.info('准备发送推送通知...')
         title = "Bilibili 任务通知"
-        content = format_push_message(all_results)
         send_to_pushplus(config["PUSH_PLUS_TOKEN"], title, content)
     else:
         logger.info('未配置 PUSH_PLUS_TOKEN，跳过推送。')
@@ -195,7 +201,7 @@ def main():
             logger.error(f"Telegram 推送失败: {exc}")
     else:
         logger.info("未配置 TG_BOT_TOKEN/TG_CHAT_ID，跳过 Telegram。")
-
+    
     # 所有账号执行完毕，统一输出最终执行结果
     if any_failed:
         logger.error("有账号任务执行失败，整个任务失败！")
