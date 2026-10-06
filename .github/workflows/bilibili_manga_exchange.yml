@@ -4,11 +4,11 @@ on:
   schedule:
     # 北京时间 23:58 启动
     # GitHub Actions 使用 UTC，因此为 15:58 UTC
-    - cron: '58 15 * * *'
+    - cron: '55 15 * * *'
 
     # 北京时间 09:58 启动
     # GitHub Actions 使用 UTC，因此为 01:58 UTC
-    - cron: '58 1 * * *'
+    - cron: '55 1 * * *'
 
   workflow_dispatch:
     inputs:
@@ -73,7 +73,7 @@ jobs:
 
           # 定时任务根据 cron 判断场次。
           # 手动运行使用 target_slot。
-          MANGA_TARGET_SLOT: ${{ github.event_name == 'workflow_dispatch' && inputs.target_slot || (github.event.schedule == '58 15 * * *' && 'midnight' || 'morning') }}
+          MANGA_TARGET_SLOT: ${{ github.event_name == 'workflow_dispatch' && inputs.target_slot || (github.event.schedule == '55 15 * * *' && 'midnight' || 'morning') }}
 
         run: |
           echo "Event: ${{ github.event_name }}"
