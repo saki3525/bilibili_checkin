@@ -2,12 +2,12 @@ name: Bilibili Manga Coupon Exchange
 
 on:
   schedule:
-    # 北京时间 23:58 启动
-    # GitHub Actions 使用 UTC，因此为 15:58 UTC
+    # 北京时间 23:55 启动
+    # GitHub Actions 使用 UTC，因此为 15:55 UTC
     - cron: '55 15 * * *'
 
-    # 北京时间 09:58 启动
-    # GitHub Actions 使用 UTC，因此为 01:58 UTC
+    # 北京时间 09:55 启动
+    # GitHub Actions 使用 UTC，因此为 01:55 UTC
     - cron: '55 1 * * *'
 
   workflow_dispatch:
